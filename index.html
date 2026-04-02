@@ -197,11 +197,24 @@
       padding-top: 1.2rem;
       margin-top: 1.5rem;
     }
+    
+    /* ========== গুরুত্বপূর্ণ CSS ফিক্স ========== */
     .typing-area {
-      white-space: pre-line;
-      line-height: 1.6;
+      white-space: pre-wrap;  /* pre-line এর চেয়ে ভালো কাজ করে */
+      word-break: break-word;
+      line-height: 1.8;       /* লাইনের মাঝে gap */
       font-size: 0.95rem;
+      font-weight: 500;
+      padding: 0.25rem 0;
     }
+    
+    /* টেক্সটের মধ্যে প্যারাগ্রাফ gap */
+    .typing-area br {
+      display: block;
+      margin: 0.5rem 0;
+      content: "";
+    }
+    
     @keyframes blinkCursor {
       from, to { border-color: transparent; }
       50% { border-color: #2effb0; }
@@ -210,11 +223,12 @@
       border-right: 2px solid #2effb0;
       animation: blinkCursor 0.8s step-end infinite;
     }
+    
     @media (max-width: 700px) {
       body { padding: 1rem; }
       th, td { padding: 0.5rem 0.3rem; font-size: 0.7rem; }
       .glow-btn { padding: 0.6rem 1rem; font-size: 0.9rem; }
-      .typing-area { font-size: 0.85rem; }
+      .typing-area { font-size: 0.85rem; line-height: 1.6; }
       body::before {
         font-size: 1.5rem;
         bottom: 3%;
@@ -269,7 +283,7 @@
       <!-- রেজাল্ট এরিয়া -->
       <div id="resultArea" style="margin-top: 2rem;">
         <div id="resultBox" class="result-green" style="min-height: 200px; display: flex; flex-direction: column; gap: 0.5rem;">
-          <div id="resultMessage" class="typing-area" style="font-weight: 500; line-height: 1.6;">⚡ সিস্টেম স্ট্যান্ডবাই... নম্বর দিন</div>
+          <div id="resultMessage" class="typing-area" style="font-weight: 500;">⚡ সিস্টেম স্ট্যান্ডবাই... নম্বর দিন</div>
           <div id="riskBadge"></div>
         </div>
       </div>
@@ -318,7 +332,7 @@
   <!-- দাবিত্যাগ -->
   <footer>
     ⚠️ এটি একটি সাইবার সিকিউরিটি ওয়েবসাইট। সমস্ত তথ্য আমরা প্রতিনিয়ত আপডেট করতে থাকি। কোনো প্রকৃত ডেটাবেস ব্যবহার করা হয়নি। <br>
-    <i class="fas fa-shield-alt"></i> সাইবার নিরাপত্তায় সবায় সচেতন হন। ।
+    <i class="fas fa-shield-alt"></i> সাইবার নিরাপত্তায় সবায় সচেতন হন।
   </footer>
 </div>
 
@@ -426,18 +440,54 @@
       } catch(e) { console.log("অডিও সমর্থিত নয়"); }
     }
     
-    // টাইপিং ইফেক্ট
+    // ========== সমাধান: টাইপিং ইফেক্ট (লাইন ব্রেক ঠিক করে) ==========
     async function typeEffect(element, text, speed = 25) {
-      element.innerText = '';
+      // innerHTML ব্যবহার করছি যাতে <br> ট্যাগ কাজ করে
+      // কিন্তু আমরা \n কে <br> এ কনভার্ট করব
+      element.innerHTML = '';
       element.classList.add('cursor-blink');
-      for (let i = 0; i < text.length; i++) {
-        element.innerText += text.charAt(i);
-        await new Promise(r => setTimeout(r, speed));
+      
+      // প্রথমে \n কে <br> এ কনভার্ট করি
+      const formattedText = text.replace(/\n/g, '<br>');
+      
+      // HTML এন্টিটি ডিকোড করে অক্ষর অক্ষর দেখানোর জন্য
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = formattedText;
+      const textNodes = [];
+      
+      // টেক্সট নোড এবং ব্র ট্যাগ সংগ্রহ করি
+      const collectNodes = (node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          textNodes.push({ type: 'text', content: node.textContent });
+        } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'BR') {
+          textNodes.push({ type: 'br' });
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          node.childNodes.forEach(child => collectNodes(child));
+        }
+      };
+      
+      collectNodes(tempDiv);
+      
+      // অক্ষর অক্ষর করে দেখানো
+      let currentHtml = '';
+      for (const item of textNodes) {
+        if (item.type === 'br') {
+          currentHtml += '<br>';
+          element.innerHTML = currentHtml;
+          await new Promise(r => setTimeout(r, speed));
+        } else if (item.type === 'text') {
+          for (let i = 0; i < item.content.length; i++) {
+            currentHtml += item.content[i];
+            element.innerHTML = currentHtml;
+            await new Promise(r => setTimeout(r, speed));
+          }
+        }
       }
+      
       element.classList.remove('cursor-blink');
     }
     
-    // সঠিক ফরম্যাটে ওয়ার্নিং মেসেজ
+    // সঠিক ফরম্যাটে ওয়ার্নিং মেসেজ (এক্সাক্ট কপি)
     function getSpecialWarningMessage() {
       return `⚠️ সতর্কতা: এই নম্বরটি আমাদের মনিটরিং সিস্টেমে ফ্ল্যাগকৃত!
 
@@ -502,14 +552,16 @@
         playWarningBeep();
         resultBoxDiv.className = "result-red";
         const warningMsg = getSpecialWarningMessage();
-        await typeEffect(resultMsgDiv, warningMsg, 22);
+        await typeEffect(resultMsgDiv, warningMsg, 20);
         riskBadgeSpan.innerHTML = '<span style="background:#c92a3e; padding:0.4rem 1rem; border-radius:40px; font-weight:bold; display:inline-block; box-shadow:0 0 12px red;"><i class="fas fa-skull-crosswalk"></i> জরুরি বিপদ সংকেত</span>';
       } 
       else {
         updateStats(false);
         resultBoxDiv.className = "result-green";
         const cleanMsg = `✅ কোন রেকর্ড পাওয়া যায়নি। এই নম্বরটি ক্লিন ও নিরাপদ।
+
 📉 রিস্ক স্কোর: ${Math.floor(Math.random() * 15)}% · স্বাভাবিক অবস্থা
+
 🟢 বাংলাদেশ সাইবার নেটওয়ার্ক কর্তৃক অনুমোদিত।`;
         await typeEffect(resultMsgDiv, cleanMsg, 22);
         riskBadgeSpan.innerHTML = '<span style="background:#117f5a; padding:0.3rem 1rem; border-radius:40px;"><i class="fas fa-check-circle"></i> নিরাপদ (ক্লিন)</span>';
@@ -540,7 +592,7 @@
       }
     }, 7600);
     
-    console.log("✅ বিডি সাইবার সিকিউরিটি টিম  সক্রিয়");
+    console.log("✅ বিডি সাইবার সিকিউরিটি টিম সক্রিয়");
   })();
 </script>
 </body>
