@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>অবৈধভাবে টাকা লেনদেন করা নম্বরগুলো রিস্ক স্ক্যানার | বিডি সাইবার সিকিউরিটি টিম</title>
+  <!-- Google Fonts + Font Awesome -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;600;700;800&family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      position: relative;
+      background: radial-gradient(circle at 20% 30%, #070b0b, #000000);
+      font-family: 'Hind Siliguri', 'Inter', monospace, sans-serif;
+      color: #e0f2e9;
+      padding: 1.5rem;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ব্যাকগ্রাউন্ডে ওয়াটারমার্ক টেক্সট - বাংলাদেশ সাইবার সিকিউরিটি টিম */
+    body::before {
+      content: "বাংলাদেশ সাইবার সিকিউরিটি টিম";
+      position: fixed;
+      bottom: 8%;
+      right: 3%;
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: rgba(0, 255, 150, 0.07);
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 0;
+      font-family: 'Hind Siliguri', sans-serif;
+      transform: rotate(-3deg);
+      letter-spacing: 3px;
+      text-shadow: 0 0 10px rgba(0,255,100,0.2);
+    }
+
+    /* সাইবার গ্রিড লাইন ব্যাকগ্রাউন্ড */
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(rgba(0, 255, 150, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 150, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* সব কন্টেন্ট ব্যাকগ্রাউন্ডের উপরে থাকবে */
+    .container {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Glassmorphism + Neon Cyber Theme */
+    .glass-card {
+      background: rgba(5, 20, 18, 0.7);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(0, 255, 150, 0.25);
+      border-radius: 2rem;
+      box-shadow: 0 25px 40px -12px rgba(0,0,0,0.8), 0 0 8px rgba(0,255,100,0.3);
+      transition: all 0.2s ease;
+    }
+
+    .glow-input {
+      background: #0a1417;
+      border: 1.5px solid #1f5a4f;
+      border-radius: 2rem;
+      padding: 0.9rem 1.5rem;
+      font-size: 1rem;
+      color: #d1fff0;
+      transition: 0.2s;
+      font-weight: 500;
+    }
+    .glow-input:focus {
+      outline: none;
+      border-color: #2effbc;
+      box-shadow: 0 0 14px #2effbc88;
+      background: #051012;
+    }
+
+    .glow-btn {
+      background: linear-gradient(145deg, #0d2a24, #02100e);
+      border: 1px solid #1effb0;
+      border-radius: 3rem;
+      padding: 0.9rem 1.8rem;
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #caffea;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 0 8px #1effaa66;
+      font-family: inherit;
+    }
+    .glow-btn:hover {
+      transform: scale(1.02);
+      background: #0e4038;
+      border-color: #6effce;
+      box-shadow: 0 0 22px #2effb0;
+      color: white;
+    }
+
+    /* Result boxes */
+    .result-red {
+      background: rgba(180, 20, 35, 0.25);
+      border-left: 6px solid #ff4466;
+      backdrop-filter: blur(16px);
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 0 26px #ff3366aa;
+      animation: pulseRed 1s infinite alternate;
+    }
+    .result-green {
+      background: rgba(0, 220, 120, 0.1);
+      border-left: 6px solid #2effbc;
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 0 12px #2effbc55;
+    }
+    @keyframes pulseRed {
+      0% { box-shadow: 0 0 6px #ff5577; border-left-color: #ff5577; }
+      100% { box-shadow: 0 0 28px #ff2266; border-left-color: #ff7799; }
+    }
+
+    /* Scrollable Table */
+    .data-table-container {
+      max-height: 380px;
+      overflow-y: auto;
+      border-radius: 1.2rem;
+      scrollbar-width: thin;
+      scrollbar-color: #2effb0 #102a22;
+    }
+    .data-table-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    .data-table-container::-webkit-scrollbar-track {
+      background: #0a1f1a;
+      border-radius: 10px;
+    }
+    .data-table-container::-webkit-scrollbar-thumb {
+      background: #2effaa;
+      border-radius: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    th, td {
+      padding: 0.9rem 0.6rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(80, 255, 150, 0.2);
+    }
+    th {
+      color: #bbffe6;
+      font-weight: 700;
+      background: rgba(0, 30, 25, 0.7);
+      position: sticky;
+      top: 0;
+      backdrop-filter: blur(4px);
+    }
+    .badge-risky {
+      background: #9e2a3b;
+      color: #ffcfcf;
+      padding: 0.3rem 0.8rem;
+      border-radius: 30px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      display: inline-block;
+      box-shadow: 0 0 6px #ff4d4d;
+    }
+    .stat-card {
+      background: rgba(0, 30, 25, 0.7);
+      backdrop-filter: blur(8px);
+      border-radius: 1.2rem;
+      padding: 0.7rem 1rem;
+      text-align: center;
+      border: 1px solid #2effb066;
+    }
+    footer {
+      font-size: 0.7rem;
+      text-align: center;
+      color: #7ecfb0;
+      border-top: 1px solid #1e6b55;
+      padding-top: 1.2rem;
+      margin-top: 1.5rem;
+    }
+    .typing-area {
+      white-space: pre-line;
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+    @keyframes blinkCursor {
+      from, to { border-color: transparent; }
+      50% { border-color: #2effb0; }
+    }
+    .cursor-blink {
+      border-right: 2px solid #2effb0;
+      animation: blinkCursor 0.8s step-end infinite;
+    }
+    @media (max-width: 700px) {
+      body { padding: 1rem; }
+      th, td { padding: 0.5rem 0.3rem; font-size: 0.7rem; }
+      .glow-btn { padding: 0.6rem 1rem; font-size: 0.9rem; }
+      .typing-area { font-size: 0.85rem; }
+      body::before {
+        font-size: 1.5rem;
+        bottom: 3%;
+        right: 2%;
+        white-space: normal;
+        width: 200px;
+        text-align: right;
+        line-height: 1.3;
+      }
+    }
+    .bd-flag-badge {
+      background: #0b4f3c;
+      display: inline-block;
+      padding: 0.2rem 0.8rem;
+      border-radius: 40px;
+      font-size: 0.7rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container" style="max-width: 1400px; margin: 0 auto;">
+  
+  <!-- হেডার: বাংলাদেশ সাইবার সিকিউরিটি টিম -->
+  <div class="glass-card" style="padding: 1rem 2rem; margin-bottom: 2rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;">
+    <div>
+      <h1 style="font-weight: 800; letter-spacing: -0.3px; background: linear-gradient(135deg, #aaffdd, #3effb0); -webkit-background-clip: text; background-clip: text; color: transparent;">
+        <i class="fas fa-shield-haltered"></i> সাইবার মনিটরিং সিস্টেম (BD-CERT)
+      </h1>
+      <p style="font-size: 0.75rem; color: #a0f5d5;"><i class="fas fa-map-marker-alt"></i> বাংলাদেশ সাইবার সিকিউরিটি টিম | রিয়েল-টাইম রিস্ক স্ক্যানার</p>
+    </div>
+    <div class="stat-card">
+      <i class="fas fa-flag-checkered"></i> <span style="font-weight:bold;">সক্রিয় নোড: ৭/৭</span><br>
+      <span style="font-size: 0.6rem;">এনক্রিপ্টেড চ্যানেল</span>
+    </div>
+  </div>
+
+  <!-- মূল গ্রিড: বাম দিকে চেক ফর্ম + ডানে ড্যাশবোর্ড -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.8rem; margin-bottom: 2rem;">
+    
+    <!-- বাম প্যানেল: নম্বর চেক করুন -->
+    <div class="glass-card" style="padding: 1.8rem;">
+      <h2 style="font-size: 1.7rem; margin-bottom: 0.3rem;"><i class="fas fa-radar"></i> আপনার নম্বর যাচাই করুন</h2>
+      <p style="margin-bottom: 1.2rem; color: #bef5e2; font-size: 0.85rem;">🔍 মোবাইল নম্বর লিখুন, হুমকির মাত্রা নির্ণয় করবে সিস্টেম</p>
+      
+      <div class="input-group" style="display: flex; flex-direction: column; gap: 1.2rem;">
+        <input type="tel" id="phoneInput" class="glow-input" placeholder="যেমন: 017XXXXXXXX (১১ ডিজিট)" autocomplete="off">
+        <button id="scanBtn" class="glow-btn"><i class="fas fa-bolt"></i> এখন স্ক্যান করুন</button>
+      </div>
+
+      <!-- রেজাল্ট এরিয়া -->
+      <div id="resultArea" style="margin-top: 2rem;">
+        <div id="resultBox" class="result-green" style="min-height: 200px; display: flex; flex-direction: column; gap: 0.5rem;">
+          <div id="resultMessage" class="typing-area" style="font-weight: 500; line-height: 1.6;">⚡ সিস্টেম স্ট্যান্ডবাই... নম্বর দিন</div>
+          <div id="riskBadge"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ডান প্যানেল: পরিসংখ্যান ও মনিটরিং তথ্য -->
+    <div class="glass-card" style="padding: 1.5rem;">
+      <h3 style="margin-bottom: 1rem;"><i class="fas fa-chart-line"></i> হুমকি গোয়েন্দা ড্যাশবোর্ড</h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="stat-card"><i class="fas fa-database"></i> <span id="totalScannedStat">৩২,৮৪১</span><br><span style="font-size: 0.65rem;">মোট স্ক্যানকৃত নম্বর</span></div>
+        <div class="stat-card"><i class="fas fa-exclamation-triangle"></i> <span id="highRiskStat">১,২০৭</span><br><span style="font-size: 0.65rem;">উচ্চ ঝুঁকির সংখ্যা</span></div>
+        <div class="stat-card"><i class="fas fa-eye"></i> <span id="activeMon">৩,৯৫২</span><br><span style="font-size: 0.65rem;">সক্রিয় নজরদারি</span></div>
+        <div class="stat-card"><i class="fas fa-microchip"></i> BD-ENCRYPT<br><span style="font-size: 0.65rem;">সরকারি সুরক্ষা স্তর</span></div>
+      </div>
+      <div style="margin-top: 1rem; font-size: 0.7rem; background: #0b221f; border-radius: 1rem; padding: 0.6rem; text-align: center;">
+        <i class="fas fa-sync-alt"></i> লাইভ ফিড: ১.৮M হুমকি/ঘণ্টা বিশ্লেষিত
+      </div>
+    </div>
+  </div>
+
+  <!-- সংখ্যার তালিকা (শুধুমাত্র উচ্চ ঝুঁকি) -->
+  <div class="glass-card" style="padding: 1.5rem; margin-bottom: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; margin-bottom: 1rem;">
+      <div>
+        <h3 style="font-weight: 700;"><i class="fas fa-list-ul"></i> মাস্কড নম্বর রেজিস্ট্রি (লাইভ স্যাম্পল)</h3>
+        <p style="font-size: 0.85rem; color: #ffcf9a; margin-top: 6px;">
+          ⚠️ এই নম্বরগুলি আমাদের সিস্টেমে অস্বাভাবিক অ্যাক্টিভিটি প্যাটার্ন এবং মনিটরিং অ্যালার্টের কারণে ফ্ল্যাগ করা হয়েছে।
+        </p>
+      </div>
+      <span class="bd-flag-badge"><i class="fas fa-skull-crosswalk"></i> রেড জোন রেকর্ড</span>
+    </div>
+    <div class="data-table-container">
+      <table id="numberTable">
+        <thead>
+          <tr><th>মাস্কড নম্বর (Masked Number)</th><th>ঝুঁকির স্কোর (Risk Score)</th><th>স্ট্যাটাস</th></tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top: 0.8rem; font-size: 0.7rem; text-align: right; color: #8fcbba;">
+      <i class="fas fa-database"></i> সর্বমোট ১,২৮০টি ফ্ল্যাগড নম্বর | রিয়েল-টাইম হুমকি তালিকা
+    </div>
+  </div>
+
+  <!-- দাবিত্যাগ -->
+  <footer>
+    ⚠️ এটি একটি সাইবার সিকিউরিটি ওয়েবসাইট। সমস্ত তথ্য আমরা প্রতিনিয়ত আপডেট করতে থাকি। কোনো প্রকৃত ডেটাবেস ব্যবহার করা হয়নি। <br>
+    <i class="fas fa-shield-alt"></i> সাইবার নিরাপত্তায় সবায় সচেতন হন। ।
+  </footer>
+</div>
+
+<script>
+  (function() {
+    // ------------------------------
+    // ফ্ল্যাগড নম্বর তালিকা (শুধু উচ্চ ঝুঁকি, ৯০-১০০%)
+    // ------------------------------
+    const prefixes = ['013', '014', '015', '016', '017', '018', '019'];
+    
+    function generateRawNumber() {
+      const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+      let rest = '';
+      for (let i = 0; i < 8; i++) rest += Math.floor(Math.random() * 10);
+      return prefix + rest;
+    }
+    
+    function maskNumberDynamic(rawNum) {
+      if (rawNum.length !== 11) rawNum = rawNum.slice(0,11);
+      const prefix = rawNum.slice(0,3);
+      const restFull = rawNum.slice(3);
+      const pattern = Math.floor(Math.random() * 6);
+      switch(pattern) {
+        case 0: return `${prefix}${restFull.slice(0,2)}*****${restFull.slice(-2)}`;
+        case 1: return `${prefix}*****${restFull.slice(-4)}`;
+        case 2: return `${prefix}${restFull.slice(0,3)}****${restFull.slice(-3)}`;
+        case 3: return `${prefix}****${restFull.slice(-5)}`;
+        case 4: return `${prefix}${restFull.slice(0,1)}******${restFull.slice(-2)}`;
+        default: return `${prefix}******${restFull.slice(-3)}`;
+      }
+    }
+    
+    function getHighRiskOnly() {
+      const riskScore = Math.floor(Math.random() * 11) + 90;
+      let statusText = '';
+      if (riskScore >= 98) statusText = '🚨 ক্রিটিক্যাল ফ্ল্যাগড';
+      else if (riskScore >= 94) statusText = '⚠️ হাই রিস্ক (নট সেফ)';
+      else statusText = '🔴 সন্দেহভাজন - নট সেফ';
+      return { risk: riskScore, status: statusText };
+    }
+    
+    const TOTAL_RECORDS = 1280;
+    const riskDatabase = [];
+    for (let i = 0; i < TOTAL_RECORDS; i++) {
+      let raw = generateRawNumber();
+      let masked = maskNumberDynamic(raw);
+      const { risk, status } = getHighRiskOnly();
+      riskDatabase.push({ masked, risk, status });
+    }
+    
+    function renderRiskTable() {
+      const tbody = document.getElementById('tableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      for (let item of riskDatabase) {
+        const row = tbody.insertRow();
+        const cellMask = row.insertCell(0);
+        const cellRisk = row.insertCell(1);
+        const cellStatus = row.insertCell(2);
+        cellMask.innerText = item.masked;
+        cellMask.style.fontFamily = 'monospace';
+        cellRisk.innerText = `${item.risk}%`;
+        cellRisk.style.color = '#ffad8a';
+        cellRisk.style.fontWeight = 'bold';
+        cellStatus.innerHTML = `<span class="badge-risky"><i class="fas fa-ban"></i> ${item.status}</span>`;
+      }
+    }
+    
+    // ---------- ফেক স্ট্যাট ----------
+    let totalScanned = 32841;
+    let highRiskCount = 1207;
+    const totalSpan = document.getElementById('totalScannedStat');
+    const highSpan = document.getElementById('highRiskStat');
+    const activeMonSpan = document.getElementById('activeMon');
+    
+    function updateStats(isHighRiskFound = false) {
+      totalScanned++;
+      totalSpan.innerText = totalScanned.toLocaleString('bn-BD');
+      if (isHighRiskFound) {
+        highRiskCount++;
+        highSpan.innerText = highRiskCount.toLocaleString('bn-BD');
+      }
+      let activeVal = parseInt(activeMonSpan.innerText.replace(/,/g,''));
+      if (isNaN(activeVal)) activeVal = 3952;
+      activeVal += Math.floor(Math.random() * 3);
+      activeMonSpan.innerText = activeVal.toLocaleString('bn-BD');
+    }
+    
+    // স্পেশাল ট্রিগার নম্বর (যেটা আসল ওয়ার্নিং দেবে)
+    const SPECIAL_FLAGGED = "01713693447";
+    
+    function playWarningBeep() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = 980;
+        gain.gain.value = 0.3;
+        osc.type = "sine";
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.7);
+        osc.stop(audioCtx.currentTime + 0.6);
+      } catch(e) { console.log("অডিও সমর্থিত নয়"); }
+    }
+    
+    // টাইপিং ইফেক্ট
+    async function typeEffect(element, text, speed = 25) {
+      element.innerText = '';
+      element.classList.add('cursor-blink');
+      for (let i = 0; i < text.length; i++) {
+        element.innerText += text.charAt(i);
+        await new Promise(r => setTimeout(r, speed));
+      }
+      element.classList.remove('cursor-blink');
+    }
+    
+    // সঠিক ফরম্যাটে ওয়ার্নিং মেসেজ
+    function getSpecialWarningMessage() {
+      return `⚠️ সতর্কতা: এই নম্বরটি আমাদের মনিটরিং সিস্টেমে ফ্ল্যাগকৃত!
+
+📛 অবস্থা: উচ্চ ঝুঁকি (High Risk)
+📊 রিস্ক স্কোর: ৯৭%
+🆔 মাস্কড আইডি: 01713*****47
+📍 অবস্থান: নাটোর (Natore)
+💰 অভিযোগ: অবৈধভাবে বিকাশ (bKash) এর মাধ্যমে টাকা লেনদেন ও প্রতারণা
+🚨 এই নম্বর ব্যবহার করে জালিয়াতি, প্রতারণা ও অবৈধ লেনদেনের প্রমাণ পাওয়া গেছে।
+🛡️ বাংলাদেশ সাইবার টিম কর্তৃক লাল তালিকাভুক্ত। তাৎক্ষণিক সতর্কতা জারি করা হলো।
+
+⚠️ দয়া করে এই নম্বরে কোনো লেনদেন করবেন না।`;
+    }
+    
+    let scanningActive = false;
+    const scanButton = document.getElementById('scanBtn');
+    const phoneField = document.getElementById('phoneInput');
+    const resultMsgDiv = document.getElementById('resultMessage');
+    const riskBadgeSpan = document.getElementById('riskBadge');
+    const resultBoxDiv = document.getElementById('resultBox');
+    
+    async function runScan() {
+      if (scanningActive) return;
+      let rawNumber = phoneField.value.trim();
+      if (!rawNumber) {
+        resultMsgDiv.innerText = "⚠️ দয়া করে একটি মোবাইল নম্বর লিখুন।";
+        resultBoxDiv.className = "result-red";
+        riskBadgeSpan.innerHTML = "";
+        return;
+      }
+      let cleaned = rawNumber.replace(/\D/g, '');
+      if (cleaned.length > 11) cleaned = cleaned.slice(-11);
+      if (cleaned.length !== 11) {
+        resultMsgDiv.innerText = "❌ ভুল ফরম্যাট! সঠিক ১১ ডিজিটের নম্বর দিন (যেমন 017xxxxxxxx)";
+        resultBoxDiv.className = "result-red";
+        riskBadgeSpan.innerHTML = "";
+        return;
+      }
+      
+      scanningActive = true;
+      scanButton.disabled = true;
+      scanButton.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> স্ক্যান প্রক্রিয়াধীন...';
+      
+      const fakeSteps = ["🔍 স্ক্যানিং...", "📡 ডাটাবেস চেক করা হচ্ছে...", "⚙️ অ্যাক্টিভিটি অ্যানালাইসিস...", "🛡️ থ্রেট ইন্টেল প্রসেসিং..."];
+      let stepIndex = 0;
+      const stepInterval = setInterval(() => {
+        if (stepIndex < fakeSteps.length) {
+          resultMsgDiv.innerText = fakeSteps[stepIndex];
+          resultBoxDiv.className = "glass-card";
+          riskBadgeSpan.innerHTML = "";
+          stepIndex++;
+        }
+      }, 700);
+      
+      await new Promise(resolve => setTimeout(resolve, 2700));
+      clearInterval(stepInterval);
+      
+      const isSpecial = (cleaned === SPECIAL_FLAGGED);
+      
+      if (isSpecial) {
+        updateStats(true);
+        playWarningBeep();
+        resultBoxDiv.className = "result-red";
+        const warningMsg = getSpecialWarningMessage();
+        await typeEffect(resultMsgDiv, warningMsg, 22);
+        riskBadgeSpan.innerHTML = '<span style="background:#c92a3e; padding:0.4rem 1rem; border-radius:40px; font-weight:bold; display:inline-block; box-shadow:0 0 12px red;"><i class="fas fa-skull-crosswalk"></i> জরুরি বিপদ সংকেত</span>';
+      } 
+      else {
+        updateStats(false);
+        resultBoxDiv.className = "result-green";
+        const cleanMsg = `✅ কোন রেকর্ড পাওয়া যায়নি। এই নম্বরটি ক্লিন ও নিরাপদ।
+📉 রিস্ক স্কোর: ${Math.floor(Math.random() * 15)}% · স্বাভাবিক অবস্থা
+🟢 বাংলাদেশ সাইবার নেটওয়ার্ক কর্তৃক অনুমোদিত।`;
+        await typeEffect(resultMsgDiv, cleanMsg, 22);
+        riskBadgeSpan.innerHTML = '<span style="background:#117f5a; padding:0.3rem 1rem; border-radius:40px;"><i class="fas fa-check-circle"></i> নিরাপদ (ক্লিন)</span>';
+      }
+      
+      scanButton.disabled = false;
+      scanButton.innerHTML = '<i class="fas fa-bolt"></i> এখন স্ক্যান করুন';
+      scanningActive = false;
+    }
+    
+    scanButton.addEventListener('click', runScan);
+    phoneField.addEventListener('keypress', (e) => { if(e.key === 'Enter') runScan(); });
+    
+    renderRiskTable();
+    
+    setInterval(() => {
+      if (!scanningActive) {
+        let activeVal = parseInt(activeMonSpan.innerText.replace(/,/g,''));
+        if(!isNaN(activeVal)) {
+          let delta = Math.floor(Math.random() * 9) - 2;
+          let newVal = Math.max(2800, activeVal + delta);
+          activeMonSpan.innerText = newVal.toLocaleString('bn-BD');
+        }
+        if(Math.random() < 0.2) {
+          totalScanned += Math.floor(Math.random() * 4);
+          totalSpan.innerText = totalScanned.toLocaleString('bn-BD');
+        }
+      }
+    }, 7600);
+    
+    console.log("✅ বিডি সাইবার সিকিউরিটি টিম  সক্রিয়");
+  })();
+</script>
+</body>
+</html>
